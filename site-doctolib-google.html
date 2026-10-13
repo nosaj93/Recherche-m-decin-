@@ -1,0 +1,1647 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trouver un généraliste</title>
+<meta name="description" content="Généralistes, dentistes et ophtalmologues autour d'une adresse : rayon, temps de trajet réel, secteur et OPTAM, suivi des appels.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+/* Mise en page : panneau de recherche à gauche, carte puis fiches « plaque de cabinet » à droite. Une seule colonne sur mobile. */
+:root {
+  --paper: #f3f5f4;
+  --surface: #ffffff;
+  --sunken: #e8edeb;
+  --ink: #13201b;
+  --muted: #56655f;
+  --line: #d5ddda;
+  --accent: #0a6a55;
+  --accent-hover: #08513f;
+  --on-accent: #ffffff;
+  --focus: #1f6fd1;
+  --s1: #1b7a4b;
+  --s2o: #8f5d00;
+  --s2: #b3461c;
+  --dp: #86502a;
+  --s3: #b42318;
+  --unk: #687570;
+  --tile-filter: none;
+  --shadow: 0 1px 2px rgb(19 32 27 / .06), 0 10px 28px -18px rgb(19 32 27 / .35);
+  --font-display: "Marcellus", "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-ui: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-num: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d1311; --surface: #141b18; --sunken: #1b2421; --ink: #e3eae7; --muted: #9aa8a2; --line: #2a3531;
+    --accent: #3dbd99; --accent-hover: #66d3b3; --on-accent: #04211a; --focus: #74adff;
+    --s1: #52cf8d; --s2o: #e2a93d; --s2: #f08b5e; --dp: #d69a64; --s3: #ff7d70; --unk: #9aa8a2;
+    --tile-filter: invert(1) hue-rotate(180deg) brightness(.95) contrast(.85) saturate(.6);
+    --shadow: 0 1px 2px rgb(0 0 0 / .45), 0 12px 28px -18px rgb(0 0 0 / .8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d1311; --surface: #141b18; --sunken: #1b2421; --ink: #e3eae7; --muted: #9aa8a2; --line: #2a3531;
+  --accent: #3dbd99; --accent-hover: #66d3b3; --on-accent: #04211a; --focus: #74adff;
+  --s1: #52cf8d; --s2o: #e2a93d; --s2: #f08b5e; --dp: #d69a64; --s3: #ff7d70; --unk: #9aa8a2;
+  --tile-filter: invert(1) hue-rotate(180deg) brightness(.95) contrast(.85) saturate(.6);
+  --shadow: 0 1px 2px rgb(0 0 0 / .45), 0 12px 28px -18px rgb(0 0 0 / .8);
+  color-scheme: dark;
+}
+
+/* Fonds d'écran au choix. Le vert (par défaut) suit le mode clair ou sombre du téléphone. */
+:root[data-bg="noir"] {
+  --paper: #050606; --surface: #121314; --sunken: #1b1d1e; --ink: #ececec; --muted: #a2a6a8; --line: #2a2d2f;
+  --accent: #3dbd99; --accent-hover: #63d2b2; --on-accent: #04211a; --focus: #74adff;
+  --s1: #52cf8d; --s2o: #e2a93d; --s2: #f08b5e; --dp: #d69a64; --s3: #ff7d70; --unk: #a2a6a8;
+  --tile-filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.85) saturate(.5);
+  --shadow: 0 1px 2px rgb(0 0 0 / .5), 0 12px 28px -18px rgb(0 0 0 / .9);
+  color-scheme: dark;
+}
+:root[data-bg="rose"] {
+  --paper: #fbe3ec; --surface: #fffafc; --sunken: #f9e3eb; --ink: #2b1520; --muted: #7b5566; --line: #efc8d6;
+  --accent: #c2185b; --accent-hover: #9b1048; --on-accent: #ffffff; --focus: #1f6fd1;
+  --s1: #1b7a4b; --s2o: #8f5d00; --s2: #b3461c; --dp: #86502a; --s3: #b42318; --unk: #7b6870;
+  --tile-filter: none;
+  --shadow: 0 1px 2px rgb(80 20 45 / .07), 0 10px 28px -18px rgb(80 20 45 / .35);
+  color-scheme: light;
+}
+:root[data-bg="violet"] {
+  --paper: #130b20; --surface: #1c1330; --sunken: #261a3e; --ink: #ece6f7; --muted: #a99cc4; --line: #34274f;
+  --accent: #b38bff; --accent-hover: #cbb0ff; --on-accent: #1a0e2d; --focus: #8fb8ff;
+  --s1: #52cf8d; --s2o: #e2a93d; --s2: #f08b5e; --dp: #d69a64; --s3: #ff7d70; --unk: #a99cc4;
+  --tile-filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.85) saturate(.5);
+  --shadow: 0 1px 2px rgb(0 0 0 / .5), 0 12px 28px -18px rgb(0 0 0 / .9);
+  color-scheme: dark;
+}
+:root[data-bg="ratons"] {
+  --paper: #4f5a3c; --surface: #ffffff; --sunken: #edf1f4; --ink: #1c2026; --muted: #4f5761; --line: #d2d9df;
+  --accent: #3d4654; --accent-hover: #262d38; --on-accent: #ffffff; --focus: #1f6fd1;
+  --s1: #1b7a4b; --s2o: #8f5d00; --s2: #b3461c; --dp: #86502a; --s3: #b42318; --unk: #687570;
+  --tile-filter: none;
+  --shadow: 0 1px 2px rgb(28 32 38 / .1), 0 10px 28px -18px rgb(28 32 38 / .5);
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-ui); -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+
+.masthead-side { display: grid; gap: 8px; justify-items: start; }
+@media (min-width: 720px) { .masthead-side { justify-items: end; } }
+.bgpick { display: flex; align-items: center; gap: 10px; }
+.bgpick legend { float: left; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.swatches { display: flex; gap: 8px; }
+.swatches input { position: absolute; opacity: 0; pointer-events: none; }
+.swatches label { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; background: var(--sw); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .25); }
+.swatches label:hover { transform: scale(1.08); }
+.swatches input:checked + label { outline: 2px solid var(--accent); outline-offset: 3px; }
+.swatches input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 3px; }
+.credit-ratons { display: none; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:hover { color: var(--accent-hover); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend { padding: 0; }
+
+.app { max-width: 1320px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+@media (min-width: 720px) { .app { padding-inline: 28px; padding-block: 28px 48px; } }
+
+/* En-tête */
+.masthead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 24px; padding-bottom: 18px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+.masthead h1 { font: 400 clamp(1.75rem, 1.2rem + 1.9vw, 2.5rem)/1.1 var(--font-display); letter-spacing: .015em; margin: 0; text-wrap: balance; }
+.masthead p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.freshness { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+.layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) {
+  .layout { grid-template-columns: 372px minmax(0, 1fr); align-items: start; gap: 28px; }
+  .panel { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+}
+
+/* Panneau de recherche */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 20px; box-shadow: var(--shadow); }
+.field { display: grid; gap: 8px; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; }
+.label output { font: 600 15px var(--font-num); letter-spacing: 0; text-transform: none; color: var(--ink); font-variant-numeric: tabular-nums; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+.addr-wrap { position: relative; }
+.addr-row { display: flex; gap: 8px; }
+input[type="text"], input[type="datetime-local"], select {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0;
+}
+input[type="text"] { flex: 1; }
+input[type="text"]:focus, input[type="datetime-local"]:focus, select:focus { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--accent) 28%, transparent); outline-offset: 0; }
+.suggest { position: absolute; z-index: 1200; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); max-height: 300px; overflow: auto; }
+.suggest li { padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+.suggest li small { display: block; color: var(--muted); font-size: 12px; }
+.suggest li[aria-selected="true"], .suggest li:hover { background: var(--sunken); }
+.suggest .none { color: var(--muted); cursor: default; }
+.addr-msg { font-size: 13px; margin: 0; min-height: 1.2em; color: var(--muted); }
+.addr-msg[data-kind="ok"] { color: var(--s1); }
+.addr-msg[data-kind="err"] { color: var(--s3); }
+
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; }
+.scale { display: flex; justify-content: space-between; font: 12px var(--font-num); color: var(--muted); }
+
+.modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.modes.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.modes input { position: absolute; opacity: 0; pointer-events: none; }
+.modes label { display: grid; justify-items: center; gap: 4px; padding: 10px 2px 8px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 12.5px; font-weight: 700; text-align: center; color: var(--muted); background: var(--surface); }
+.modes svg { width: 22px; height: 22px; }
+.modes label:hover { border-color: var(--accent); }
+.modes input:checked + label { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); box-shadow: inset 0 0 0 1px var(--accent); }
+.modes input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.chips { display: grid; gap: 6px; }
+.chip { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: var(--surface); }
+.chip:hover { border-color: var(--c); }
+.chip input { margin: 3px 0 0; accent-color: var(--accent); flex: none; }
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; margin-top: 6px; }
+.chip span { min-width: 0; }
+.chip strong { display: block; font-size: 14px; }
+.chip small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+
+.checks { display: grid; gap: 10px; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.check input { margin: 3px 0 0; accent-color: var(--accent); flex: none; }
+.check small { color: var(--muted); }
+
+.btn { font: 700 15px var(--font-ui); border-radius: 8px; padding: 11px 16px; border: 1px solid transparent; cursor: pointer; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: .65; cursor: progress; }
+.btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--line); font-weight: 600; font-size: 14px; padding: 8px 12px; }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-icon svg { width: 18px; height: 18px; }
+
+/* Colonne des résultats */
+.results { display: grid; gap: 14px; min-width: 0; }
+
+.status { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 10px; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.steps li { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+.steps .t { font-weight: 700; }
+.steps .d { font-family: var(--font-num); font-size: 12px; font-variant-numeric: tabular-nums; }
+.steps .ico { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-size: 11px; font-weight: 700; line-height: 1; }
+.steps li[data-state="active"] { color: var(--ink); }
+.steps li[data-state="active"] .ico { border-color: var(--accent); border-right-color: transparent; animation: spin .8s linear infinite; }
+.steps li[data-state="done"] .ico, .steps li[data-state="skip"] .ico { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.steps li[data-state="done"] .ico::before, .steps li[data-state="skip"] .ico::before { content: "✓"; }
+.steps li[data-state="warn"] .ico { background: var(--s2o); border-color: var(--s2o); color: var(--surface); }
+.steps li[data-state="warn"] .ico::before { content: "!"; }
+.steps li[data-state="fail"] .ico { background: var(--s3); border-color: var(--s3); color: var(--surface); }
+.steps li[data-state="fail"] .ico::before { content: "×"; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.bar { height: 4px; background: var(--sunken); border-radius: 4px; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+
+.notices { display: grid; gap: 8px; }
+.notice { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; background: var(--surface); }
+.notice strong { display: block; }
+.notice-warn { border-color: color-mix(in srgb, var(--s2o) 45%, var(--line)); background: color-mix(in srgb, var(--s2o) 8%, var(--surface)); }
+.notice-bad { border-color: color-mix(in srgb, var(--s3) 45%, var(--line)); background: color-mix(in srgb, var(--s3) 8%, var(--surface)); }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.summary { margin: 0; font-size: 15px; min-width: 0; }
+.summary strong { font: 600 22px var(--font-num); font-variant-numeric: tabular-nums; margin-right: 2px; }
+.summary .split { display: block; color: var(--muted); font-size: 13px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tools select { padding: 8px 10px; font-size: 14px; }
+
+#map { height: 380px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--sunken); z-index: 0; }
+@media (max-width: 640px) { #map { height: 270px; } }
+.leaflet-container { font-family: var(--font-ui); background: var(--sunken); }
+.leaflet-tile-pane { filter: var(--tile-filter); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface); color: var(--ink); }
+.leaflet-popup-content { margin: 12px 14px; font-size: 13px; line-height: 1.4; }
+.leaflet-popup-content b { font-family: var(--font-display); font-weight: 400; font-size: 15px; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.leaflet-control-attribution { background: color-mix(in srgb, var(--surface) 85%, transparent) !important; color: var(--muted) !important; }
+.leaflet-control-attribution a { color: var(--accent) !important; }
+.leaflet-bar a { background: var(--surface); color: var(--ink); border-bottom-color: var(--line); }
+.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
+/* Introduction (avant la première recherche) */
+.intro { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; display: grid; gap: 16px; }
+@media (min-width: 760px) { .intro { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; } }
+.intro h2 { font: 400 1.3rem/1.2 var(--font-display); margin: 0 0 8px; }
+.howto { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; max-width: 62ch; }
+.howto li::marker { font-family: var(--font-num); color: var(--accent); font-weight: 600; }
+.aside { border-left: 1px solid var(--line); padding-left: 18px; display: grid; gap: 8px; align-content: start; }
+@media (max-width: 759px) { .aside { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 14px; } }
+.aside h3 { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.aside p { margin: 0; font-size: 14px; max-width: 60ch; }
+
+/* Fiches médecin, inspirées de la plaque du cabinet */
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.doc {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 16px 14px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px;
+  box-shadow: inset 0 0 0 4px var(--surface), inset 0 0 0 5px var(--sunken);
+  scroll-margin-top: 16px;
+}
+.doc { cursor: pointer; }
+.doc:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.act-rdv { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.act-rdv:hover { background: var(--accent-hover); color: var(--on-accent); }
+.rdv-check { font-size: 13px; font-weight: 600; cursor: pointer; }
+.doc.is-focus { border-color: var(--accent); box-shadow: inset 0 0 0 4px var(--surface), inset 0 0 0 5px color-mix(in srgb, var(--accent) 35%, var(--sunken)); }
+.plaque { min-width: 0; display: grid; gap: 3px; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.name { font: 400 1.32rem/1.2 var(--font-display); letter-spacing: .02em; margin: 0; overflow-wrap: anywhere; }
+.convention { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pill { --c: var(--unk); display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid color-mix(in srgb, var(--c) 38%, transparent); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+.tag { font-size: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+
+.trip { text-align: right; display: grid; justify-items: end; align-content: start; gap: 1px; }
+.mins { font: 600 1.6rem/1 var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.mins small { font-size: .8rem; font-weight: 400; color: var(--muted); }
+.mins .approx { color: var(--s2o); }
+.how, .km { font-size: 12.5px; color: var(--muted); }
+.km { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+.details { grid-column: 1 / -1; display: grid; gap: 10px; border-top: 1px dashed var(--line); padding-top: 12px; min-width: 0; }
+.addr { margin: 0; font-size: 14.5px; }
+.addr small, .meta { display: block; color: var(--muted); font-size: 13px; }
+.meta { margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.tel { font: 600 15px var(--font-num); font-variant-numeric: tabular-nums; margin-right: 2px; user-select: all; }
+.act { font-size: 13.5px; font-weight: 700; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; cursor: pointer; }
+.act:hover { border-color: var(--accent); color: var(--accent); }
+
+.suivi { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.suivi legend { float: left; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { font-size: 12.5px; font-weight: 700; padding: 5px 10px; cursor: pointer; color: var(--muted); border-right: 1px solid var(--line); }
+.seg label:last-of-type { border-right: 0; }
+.seg input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: -2px; }
+.seg input:checked + label { color: var(--ink); background: var(--sunken); }
+.seg input:checked + label[data-v="oui"] { color: var(--s1); background: color-mix(in srgb, var(--s1) 13%, var(--surface)); }
+.seg input:checked + label[data-v="non"] { color: var(--s3); background: color-mix(in srgb, var(--s3) 12%, var(--surface)); }
+.seg input:checked + label[data-v="rappel"] { color: var(--s2o); background: color-mix(in srgb, var(--s2o) 13%, var(--surface)); }
+
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 18px; margin: 0; color: var(--muted); }
+.empty strong { color: var(--ink); display: block; margin-bottom: 4px; }
+
+.colophon { margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; }
+.colophon p { margin: 0; max-width: 110ch; }
+
+@media (max-width: 480px) {
+  .doc { grid-template-columns: minmax(0, 1fr); }
+  .trip { text-align: left; justify-items: start; grid-auto-flow: column; align-items: baseline; gap: 10px; justify-content: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Fond « ratons laveurs » : la photo floutée derrière toute la page, nette dans l'en-tête, blocs en verre dépoli */
+:root[data-bg="ratons"] body::before {
+  content: ""; position: fixed; inset: -16px; z-index: -1;
+  background: var(--paper) url("https://images.pexels.com/photos/12639847/pexels-photo-12639847.jpeg?auto=compress&cs=tinysrgb&w=1280") 50% 40% / cover no-repeat; filter: blur(5px) brightness(.9);
+}
+:root[data-bg="ratons"] :is(.masthead, .panel, .doc, .intro, .status, .empty, .colophon, .toolbar, #tapHint) {
+  background: rgb(255 255 255 / .86); -webkit-backdrop-filter: blur(10px) saturate(1.15); backdrop-filter: blur(10px) saturate(1.15);
+}
+:root[data-bg="ratons"] .doc { box-shadow: none; }
+:root[data-bg="ratons"] .masthead { border: 0; border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
+:root[data-bg="ratons"] .toolbar, :root[data-bg="ratons"] .colophon { border-radius: var(--radius); padding: 12px 14px; }
+:root[data-bg="ratons"] #tapHint { border-radius: 8px; padding: 6px 10px; justify-self: start; }
+:root[data-bg="ratons"] .credit-ratons { display: inline; }
+:root[data-bg="ratons"] .masthead::before {
+  content: ""; order: -1; flex: 1 0 100%; height: 200px; margin: -16px -18px 6px; border-radius: var(--radius) var(--radius) 0 0;
+  background: #4f5a3c url("https://images.pexels.com/photos/12639847/pexels-photo-12639847.jpeg?auto=compress&cs=tinysrgb&w=1600") 50% 42% / cover no-repeat;
+}
+@media (min-width: 720px) {
+  :root[data-bg="ratons"] .masthead { flex-wrap: nowrap; align-items: center; }
+  :root[data-bg="ratons"] .masthead-side { flex: none; }
+  :root[data-bg="ratons"] .bgpick legend, :root[data-bg="ratons"] .freshness { white-space: nowrap; }
+  :root[data-bg="ratons"] .masthead::before { order: 3; flex: 0 0 300px; height: 200px; margin: 0; border-radius: 8px; }
+}
+</style>
+<script>try{var tgbg=JSON.parse(localStorage.getItem('tg.bg.v1')||'"vert"');if(tgbg&&tgbg!=='vert')document.documentElement.setAttribute('data-bg',tgbg)}catch(e){}</script>
+</head>
+<body>
+<div class="app">
+  <header class="masthead">
+    <div>
+      <h1 id="pageTitle">Trouver un généraliste</h1>
+      <p>Les généralistes, dentistes et ophtalmologues autour de ton adresse, filtrés par distance, temps de trajet réel et secteur de conventionnement.</p>
+    </div>
+    <div class="masthead-side">
+      <fieldset class="bgpick">
+        <legend>Fond d'écran</legend>
+        <div class="swatches">
+          <input type="radio" name="bg" id="bg-vert" value="vert" checked><label for="bg-vert" title="Vert" style="--sw: linear-gradient(135deg, #0a6a55 50%, #f3f5f4 50%)"><span class="visually-hidden">Vert</span></label>
+          <input type="radio" name="bg" id="bg-noir" value="noir"><label for="bg-noir" title="Noir" style="--sw: #050606"><span class="visually-hidden">Noir</span></label>
+          <input type="radio" name="bg" id="bg-rose" value="rose"><label for="bg-rose" title="Rose" style="--sw: linear-gradient(135deg, #c2185b 50%, #fbe3ec 50%)"><span class="visually-hidden">Rose</span></label>
+          <input type="radio" name="bg" id="bg-violet" value="violet"><label for="bg-violet" title="Violet sombre" style="--sw: linear-gradient(135deg, #b38bff 50%, #130b20 50%)"><span class="visually-hidden">Violet sombre</span></label>
+          <input type="radio" name="bg" id="bg-ratons" value="ratons"><label for="bg-ratons" title="Ratons laveurs" style="--sw: #4f5a3c url(https://images.pexels.com/photos/12639847/pexels-photo-12639847.jpeg?auto=compress&cs=tinysrgb&w=160&h=160&fit=crop) center / cover no-repeat"><span class="visually-hidden">Ratons laveurs</span></label>
+        </div>
+      </fieldset>
+      <p class="freshness" id="freshness">Annuaire de l'Assurance Maladie</p>
+    </div>
+  </header>
+
+  <div class="notices" id="topNotice"></div>
+
+  <div class="layout">
+    <form class="panel" id="form" novalidate autocomplete="off">
+      <fieldset class="field">
+        <legend class="label">Je cherche</legend>
+        <div class="modes three">
+          <input type="radio" name="prof" id="p-mg" value="mg" checked>
+          <label for="p-mg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h2M13 3h2M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></svg>Généraliste</label>
+          <input type="radio" name="prof" id="p-dent" value="dent">
+          <label for="p-dent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3C4.5 3 3 5 3 7.5c0 3 1.5 4.5 2 7 .5 3 1 6.5 2.5 6.5S9.5 17 12 17s2.5 4 4.5 4 2-3.5 2.5-6.5c.5-2.5 2-4 2-7C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>Dentiste</label>
+          <input type="radio" name="prof" id="p-oph" value="oph">
+          <label for="p-oph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Ophtalmo</label>
+        </div>
+      </fieldset>
+      <div class="field">
+        <label class="label" for="addr">Ton adresse</label>
+        <div class="addr-wrap">
+          <div class="addr-row">
+            <input type="text" id="addr" placeholder="Ex. 10 rue de Paris, Montreuil" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest" spellcheck="false">
+            <button type="button" class="btn btn-ghost btn-icon" id="locate" title="Utiliser ma position">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              <span class="visually-hidden">Utiliser ma position</span>
+            </button>
+          </div>
+          <ul class="suggest" id="suggest" role="listbox" aria-label="Adresses proposées" hidden></ul>
+        </div>
+        <p class="addr-msg" id="addrMsg" aria-live="polite">Tape au moins 3 caractères puis choisis l'adresse dans la liste.</p>
+      </div>
+
+      <div class="field">
+        <label class="label" for="radius"><span>Rayon autour de chez toi</span><output id="radiusOut" for="radius">3 km</output></label>
+        <input type="range" id="radius" min="0.5" max="15" step="0.5" value="3">
+        <div class="scale" aria-hidden="true"><span>0,5 km</span><span>15 km</span></div>
+      </div>
+
+      <fieldset class="field">
+        <legend class="label">Pour y aller</legend>
+        <div class="modes">
+          <input type="radio" name="mode" id="m-TRANSIT" value="TRANSIT" checked>
+          <label for="m-TRANSIT"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M8.5 13.5h.01M15.5 13.5h.01M8 17l-2 4M16 17l2 4"/></svg>Transports</label>
+          <input type="radio" name="mode" id="m-WALK" value="WALK">
+          <label for="m-WALK"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="1.8"/><path d="M12.5 8 11 14l-2 7M11 14l3 3v4M12.5 8l-3.5 2-1 3M12.5 8l2 3 3 1"/></svg>À pied</label>
+          <input type="radio" name="mode" id="m-BIKE" value="BIKE">
+          <label for="m-BIKE"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="16" r="3.5"/><circle cx="18.5" cy="16" r="3.5"/><path d="M5.5 16 9 9h6l3.5 7M9 9l3.5 7H5.5M13 6h2.5L15 9"/></svg>Vélo</label>
+          <input type="radio" name="mode" id="m-CAR" value="CAR">
+          <label for="m-CAR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16v-3.5L6.2 7h11.6l2.2 5.5V16"/><path d="M3 16h18v2.5H3zM4.5 12.5h15"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg>Voiture</label>
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label class="label" for="maxMin"><span>Temps de trajet max</span><output id="maxOut" for="maxMin">30 min</output></label>
+        <input type="range" id="maxMin" min="5" max="90" step="5" value="30">
+        <div class="scale" aria-hidden="true"><span>5 min</span><span>1 h 30</span></div>
+      </div>
+
+      <div class="field" id="departField">
+        <label class="label" for="depart">Départ en transports</label>
+        <input type="datetime-local" id="depart">
+        <p class="hint">Le temps compte la marche et l'attente. Par défaut : prochain jour de semaine à 9 h.</p>
+      </div>
+
+      <fieldset class="field">
+        <legend class="label">Secteur</legend>
+        <div class="chips" id="sectorChips">
+          <label class="chip" style="--c: var(--s1)"><input type="checkbox" name="sector" value="S1" checked><span class="dot" aria-hidden="true"></span><span><strong>Secteur 1</strong><small>Tarif conventionnel, sans dépassement</small></span></label>
+          <label class="chip" style="--c: var(--s2o)"><input type="checkbox" name="sector" value="S2O" checked><span class="dot" aria-hidden="true"></span><span><strong>Secteur 2 avec OPTAM</strong><small>Dépassements encadrés, mieux remboursés</small></span></label>
+          <label class="chip" style="--c: var(--s2)"><input type="checkbox" name="sector" value="S2" checked><span class="dot" aria-hidden="true"></span><span><strong>Secteur 2 sans OPTAM</strong><small>Honoraires libres</small></span></label>
+          <label class="chip" style="--c: var(--dp)"><input type="checkbox" name="sector" value="DP" checked><span class="dot" aria-hidden="true"></span><span><strong>Secteur 1 avec DP</strong><small>Droit permanent à dépassement</small></span></label>
+          <label class="chip" style="--c: var(--s3)"><input type="checkbox" name="sector" value="S3" checked><span class="dot" aria-hidden="true"></span><span><strong>Secteur 3</strong><small>Non conventionné, très peu remboursé</small></span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="label">Options</legend>
+        <div class="checks">
+          <label class="check" id="mepOption"><input type="checkbox" id="hideMEP" checked><span>Masquer les modes d'exercice particulier <small>(acupuncture, angiologie, médecine du sport…)</small></span></label>
+          <label class="check"><input type="checkbox" id="vitaleOnly"><span>Carte Vitale acceptée uniquement</span></label>
+          <label class="check"><input type="checkbox" id="hideRefused"><span>Masquer ceux qui ont dit non <small>(d'après ton suivi d'appels)</small></span></label>
+        </div>
+      </fieldset>
+
+      <button type="submit" class="btn btn-primary" id="go">Lancer la recherche</button>
+    </form>
+
+    <main class="results" id="results">
+      <section class="status" id="status" aria-live="polite" hidden>
+        <ol class="steps" id="steps"></ol>
+        <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+      </section>
+
+      <div class="notices" id="notices"></div>
+
+      <div class="toolbar" id="toolbar" hidden>
+        <p class="summary" id="summary"></p>
+        <div class="tools">
+          <label class="visually-hidden" for="sort">Trier par</label>
+          <select id="sort">
+            <option value="time">Plus rapides d'abord</option>
+            <option value="dist">Plus proches d'abord</option>
+            <option value="suivi">Suivi d'appels</option>
+            <option value="name">Nom</option>
+          </select>
+          <button type="button" class="btn btn-ghost" id="copyList">Copier la liste</button>
+        </div>
+      </div>
+
+      <p class="hint" id="tapHint" hidden>Touche une fiche pour trouver sa page Doctolib : horaires, tarifs, secteur et créneaux libres.</p>
+      <div id="map" role="region" aria-label="Carte des praticiens"></div>
+      <p class="hint" id="mapNote" hidden>La carte n'a pas pu se charger. La liste fonctionne quand même.</p>
+
+      <section class="intro" id="intro">
+        <div>
+          <h2>Comment ça marche</h2>
+          <ol class="howto">
+            <li><strong>Ton adresse.</strong> Tape-la puis choisis-la dans la liste (ou utilise ta position) : la recherche part tout de suite.</li>
+            <li><strong>Rayon et trajet.</strong> La distance max à vol d'oiseau, puis le mode de transport et le temps max porte à porte.</li>
+            <li><strong>Spécialité et secteur.</strong> Choisis généraliste, dentiste ou ophtalmo, puis coche les secteurs voulus. Les filtres s'appliquent tout de suite, sans relancer.</li>
+          </ol>
+        </div>
+        <div class="aside">
+          <h3>Nouveaux patients</h3>
+          <p>Aucune base publique n'indique si un praticien accepte de nouveaux patients. Appelle les cabinets et note la réponse sur chaque fiche : l'outil la garde sur cet ordinateur et peut masquer ceux qui ont refusé.</p>
+          <p>Pour un médecin traitant, si personne n'accepte, ta CPAM peut t'aider à en trouver un (compte ameli ou 36 46).</p>
+        </div>
+      </section>
+
+      <ol class="list" id="list"></ol>
+      <div class="empty" id="empty" hidden></div>
+    </main>
+  </div>
+
+  <footer class="colophon">
+    <p>Sources : <a href="https://www.data.gouv.fr/datasets/annuaire-sante-ameli" target="_blank" rel="noopener">Annuaire santé Ameli</a> (Caisse nationale de l'Assurance Maladie, Licence Ouverte 2.0) · adresses et fond de carte : IGN Géoplateforme · communes : geo.api.gouv.fr · temps de trajet : <a href="https://transitous.org" target="_blank" rel="noopener">Transitous</a> (<a href="https://transitous.org/sources/" target="_blank" rel="noopener">sources des horaires</a>), © contributeurs OpenStreetMap.<span class="credit-ratons"> Photo du raton : <a href="https://www.pexels.com/photo/a-portrait-of-a-raccoon-12639847/" target="_blank" rel="noopener">Jordan Rushton sur Pexels</a>.</span></p>
+    <p>Informations indicatives : vérifie toujours le secteur, les horaires et l'acceptation de nouveaux patients auprès du cabinet. Ton suivi d'appels reste dans ce navigateur.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ===================== Services utilisés (publics, gratuits, sans clé) ===================== */
+  const API = {
+    geocode: 'https://data.geopf.fr/geocodage/search',
+    geocodeCsv: 'https://data.geopf.fr/geocodage/search/csv',
+    reverse: 'https://data.geopf.fr/geocodage/reverse',
+    communes: 'https://geo.api.gouv.fr/communes',
+    annuaire: 'https://tabular-api.data.gouv.fr/api/resources/432983b9-2e6f-473a-b35a-20403c300a5f/data/',
+    dataset: 'https://www.data.gouv.fr/api/1/datasets/annuaire-sante-ameli/',
+    motis: 'https://api.transitous.org/api'
+  };
+  const TILES = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
+
+  // Emprise de chaque département [lonMin, latMin, lonMax, latMax] pour savoir lesquels interroger.
+  const DEP_BBOX = {"971":[-61.81,15.83,-61.0,16.52],"972":[-61.23,14.38,-60.8,14.88],"973":[-54.61,2.11,-51.61,5.75],"976":[45.01,-13.01,45.3,-12.63],"01":[4.72,45.61,6.18,46.52],"02":[2.95,48.83,4.26,50.07],"03":[2.27,45.93,4.01,46.81],"04":[5.49,43.66,6.97,44.66],"05":[5.41,44.18,7.08,45.13],"06":[6.63,43.48,7.72,44.37],"2A":[8.53,41.33,9.41,42.39],"2B":[8.57,41.83,9.56,43.03],"07":[3.86,44.26,4.89,45.37],"08":[4.02,49.22,5.4,50.17],"09":[0.82,42.57,2.18,43.32],"10":[3.38,47.92,4.87,48.72],"11":[1.68,42.64,3.25,43.47],"12":[1.83,43.69,3.46,44.95],"13":[4.23,43.15,5.82,43.93],"14":[-1.16,48.75,0.45,49.43],"15":[2.06,44.61,3.38,45.49],"16":[-0.47,45.19,0.95,46.15],"17":[-1.57,45.08,0.01,46.38],"18":[1.77,46.42,3.08,47.63],"19":[1.22,44.92,2.53,45.77],"21":[4.06,46.9,5.52,48.04],"22":[-3.67,48.03,-1.9,48.91],"23":[1.37,45.66,2.62,46.46],"24":[-0.05,44.57,1.45,45.72],"25":[5.69,46.55,7.07,47.58],"26":[4.64,44.11,5.84,45.35],"27":[0.29,48.66,1.81,49.49],"28":[0.75,47.95,2.0,48.95],"29":[-5.15,47.7,-3.38,48.76],"30":[3.26,43.46,4.85,44.46],"31":[0.44,42.68,2.05,43.93],"32":[-0.29,43.31,1.21,44.08],"33":[-1.27,44.19,0.32,45.58],"34":[2.54,43.21,4.2,43.98],"35":[-2.29,47.63,-1.01,48.72],"36":[0.86,46.34,2.21,47.28],"37":[0.05,46.73,1.37,47.71],"38":[4.74,44.69,6.36,45.89],"39":[5.25,46.26,6.21,47.31],"40":[-1.53,43.48,0.14,44.54],"41":[0.58,47.18,2.25,48.14],"42":[3.68,45.23,4.77,46.28],"43":[3.08,44.74,4.5,45.43],"44":[-2.63,46.86,-0.94,47.84],"45":[1.51,47.48,3.13,48.35],"46":[0.98,44.2,2.22,45.05],"47":[-0.15,43.97,1.08,44.77],"48":[2.98,44.1,4.0,44.98],"49":[-1.36,46.96,0.24,47.82],"50":[-1.95,48.45,-0.73,49.73],"51":[3.39,48.51,5.04,49.41],"52":[4.62,47.57,5.9,48.69],"53":[-1.24,47.73,-0.04,48.57],"54":[5.42,48.34,7.13,49.57],"55":[4.88,48.4,5.86,49.62],"56":[-3.74,47.27,-2.03,48.22],"57":[5.89,48.52,7.65,49.52],"58":[2.84,46.65,4.24,47.59],"59":[2.06,49.96,4.24,51.09],"60":[1.68,49.06,3.17,49.77],"61":[-0.87,48.17,0.98,48.98],"62":[1.55,50.01,3.19,51.01],"63":[2.38,45.28,3.99,46.26],"64":[-1.8,42.77,0.03,43.6],"65":[-0.33,42.67,0.65,43.62],"66":[1.72,42.33,3.18,42.92],"67":[6.94,48.12,8.24,49.08],"68":[6.84,47.42,7.63,48.32],"69":[4.24,45.45,5.17,46.31],"70":[5.36,47.25,6.83,48.03],"71":[3.62,46.15,5.47,47.16],"72":[-0.45,47.56,0.92,48.49],"73":[5.62,45.05,7.19,45.94],"74":[5.8,45.68,7.05,46.41],"75":[2.22,48.81,2.47,48.91],"76":[0.06,49.25,1.8,50.08],"77":[2.39,48.12,3.56,49.12],"78":[1.44,48.43,2.23,49.09],"79":[-0.91,45.96,0.23,47.11],"80":[1.38,49.57,3.21,50.37],"81":[1.53,43.38,2.94,44.21],"82":[0.73,43.76,2.01,44.4],"83":[5.65,42.98,6.94,43.81],"84":[4.64,43.65,5.76,44.44],"85":[-2.41,46.26,-0.53,47.09],"86":[-0.11,46.04,1.22,47.18],"87":[0.62,45.43,1.92,46.41],"88":[5.39,47.81,7.2,48.52],"89":[2.84,47.31,4.35,48.4],"90":[6.75,47.43,7.15,47.83],"91":[1.91,48.28,2.59,48.78],"92":[2.14,48.72,2.34,48.96],"93":[2.28,48.8,2.61,49.02],"94":[2.3,48.68,2.62,48.87],"95":[1.6,48.9,2.6,49.25],"974":[55.21,-21.39,55.84,-20.87]};
+  // Paris, Lyon et Marseille : on travaille par arrondissement (un code postal chacun).
+  const ARRONDISSEMENTS = { '75': '75056', '69': '69123', '13': '13055' };
+
+  const LIMITS = { rows: 2500, routed: 512, chunk: 100, pcChunk: 30 };
+  // Spécialités : libellé exact dans l'annuaire, textes affichés, page Doctolib, secteurs possibles
+  const PROFS = {
+    mg: { label: 'Médecin généraliste', title: 'Trouver un généraliste', one: 'généraliste', plural: 'généralistes', eyebrow: 'Médecine générale', doctolib: 'medecin-generaliste', copy: 'Médecins généralistes', sectors: ['S1', 'S2O', 'S2', 'DP', 'S3'], mep: true },
+    dent: { label: 'Chirurgien-dentiste', title: 'Trouver un dentiste', one: 'dentiste', plural: 'dentistes', eyebrow: 'Chirurgie dentaire', doctolib: 'dentiste', copy: 'Dentistes', sectors: ['S1', 'DP', 'S3'], mep: false },
+    oph: { label: 'Ophtalmologiste', title: 'Trouver un ophtalmologue', one: 'ophtalmologue', plural: 'ophtalmologues', eyebrow: 'Ophtalmologie', doctolib: 'ophtalmologue', copy: 'Ophtalmologues', sectors: ['S1', 'S2O', 'S2', 'DP', 'S3'], mep: true }
+  };
+  // Les dentistes n'ont pas de secteur 2 ni d'OPTAM : on parle de conventionné ou non
+  const SECTORS_DENT = {
+    S1: { short: 'Conventionné', count: 'conventionnés', countOne: 'conventionné', plate: 'Conventionné', chip: ['Conventionné', 'Soins courants au tarif de la Sécu'] },
+    DP: { short: 'Conventionné DP', count: 'conventionnés DP', countOne: 'conventionné DP', plate: 'Conventionné · dépassement permanent', chip: ['Conventionné avec DP', 'Droit permanent à dépassement'] },
+    S3: { short: 'Non conventionné', count: 'non conventionnés', countOne: 'non conventionné', plate: 'Non conventionné', chip: ['Non conventionné', 'Très peu remboursé'] }
+  };
+  const CHIP_DEFAULT = {
+    S1: ['Secteur 1', 'Tarif conventionnel, sans dépassement'],
+    S2O: ['Secteur 2 avec OPTAM', 'Dépassements encadrés, mieux remboursés'],
+    S2: ['Secteur 2 sans OPTAM', 'Honoraires libres'],
+    DP: ['Secteur 1 avec DP', 'Droit permanent à dépassement'],
+    S3: ['Secteur 3', 'Non conventionné, très peu remboursé']
+  };
+  function prof() { return PROFS[state.prof] || PROFS.mg; }
+  function secInfo(k) { return state.prof === 'dent' && SECTORS_DENT[k] ? Object.assign({}, SECTORS[k], SECTORS_DENT[k]) : SECTORS[k]; }
+  const KEYS = { prefs: 'tg.prefs.v1', geo: 'tg.geo.v1', suivi: 'tg.suivi.v1', communes: 'tg.communes.v1.' };
+
+  // vmax : vitesse « à vol d'oiseau » au-delà de laquelle un médecin est forcément trop loin.
+  // estMin : estimation de secours (minutes) si le calcul d'itinéraire ne répond pas.
+  const MODES = {
+    TRANSIT: { word: 'en transports', vmax: 40, gmaps: 'transit', estMin: km => 7 + km * 1.35 / 17 * 60 },
+    WALK: { word: 'à pied', vmax: 6.5, gmaps: 'walking', estMin: km => km * 1.3 / 4.8 * 60 },
+    BIKE: { word: 'à vélo', vmax: 25, gmaps: 'bicycling', estMin: km => 1 + km * 1.3 / 15 * 60 },
+    CAR: { word: 'en voiture', vmax: 70, gmaps: 'driving', estMin: km => 4 + km * 1.4 / 24 * 60 }
+  };
+
+  const SECTORS = {
+    S1: { short: 'Secteur 1', count: 'secteur 1', plate: 'Conventionné secteur 1', token: '--s1' },
+    S2O: { short: 'Secteur 2 OPTAM', count: 'secteur 2 OPTAM', plate: 'Secteur 2 · OPTAM', token: '--s2o' },
+    S2: { short: 'Secteur 2', count: 'secteur 2 sans OPTAM', plate: 'Secteur 2', token: '--s2' },
+    DP: { short: 'Secteur 1 DP', count: 'secteur 1 DP', plate: 'Secteur 1 · dépassement permanent', token: '--dp' },
+    S3: { short: 'Secteur 3', count: 'secteur 3', plate: 'Non conventionné', token: '--s3' },
+    NA: { short: 'Secteur ?', count: 'secteur inconnu', plate: 'Secteur non renseigné', token: '--unk' }
+  };
+  const SECTOR_ORDER = ['S1', 'S2O', 'S2', 'DP', 'S3', 'NA'];
+
+  const SUIVI = {
+    '': { label: 'Pas appelé', mark: '☐', long: 'pas encore appelé' },
+    oui: { label: 'Accepte', mark: '☑', long: 'accepte de nouveaux patients' },
+    non: { label: 'Refuse', mark: '☒', long: 'ne prend pas de nouveaux patients' },
+    rappel: { label: 'À rappeler', mark: '↻', long: 'à rappeler' }
+  };
+  const SUIVI_ORDER = { oui: 0, rappel: 1, '': 2, non: 3 };
+
+  /* ===================== Petits outils ===================== */
+  const $ = (id) => document.getElementById(id);
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const qs = (o) => Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
+  const chunk = (arr, n) => { const out = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; };
+  const range = (a, b) => (b < a ? [] : Array.from({ length: b - a + 1 }, (_, i) => a + i));
+  const round5 = (x) => Math.round(x * 1e5) / 1e5;
+  const nf1 = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const prefersReducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  class UserError extends Error { constructor(msg) { super(msg); this.user = true; } }
+  const CANCELLED = { cancelled: true };
+
+  const store = {
+    get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  };
+
+  function norm(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()
+      .replace(/[^A-Z0-9]+/g, ' ').replace(/\bSTE\b/g, 'SAINTE').replace(/\bST\b/g, 'SAINT').trim();
+  }
+  function hash(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36);
+  }
+  const SMALL_WORDS = new Set(['de', 'du', 'des', 'la', 'le', 'les', 'et', 'sur', 'sous', 'en', 'aux', 'au', 'lès', 'les']);
+  const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+  // « RUE DE LA GARE » → « Rue de la Gare », « FONTENAY SOUS BOIS » → « Fontenay sous Bois »
+  function titleFr(s) {
+    if (!s) return '';
+    let first = true;
+    return String(s).toLowerCase().split(/(\s+|-)/).map(w => {
+      if (!w || /^\s+$/.test(w) || w === '-') return w;
+      let out;
+      const m = w.match(/^([dl])['’](.+)$/);
+      if (m) out = (first ? m[1].toUpperCase() : m[1]) + '’' + cap(m[2]);
+      else if (!first && SMALL_WORDS.has(w)) out = w;
+      else out = cap(w);
+      first = false;
+      return out;
+    }).join('');
+  }
+  function fmtTel(t) {
+    const d = String(t || '').replace(/\D/g, '');
+    return d.length === 10 ? d.replace(/(\d{2})(?=\d)/g, '$1 ') : String(t || '');
+  }
+  function fmtKm(km) {
+    if (km < 1) return Math.max(10, Math.round(km * 100) * 10) + ' m';
+    return nf1.format(km) + ' km';
+  }
+  function fmtRadius(km) { return String(km).replace('.', ',') + ' km'; }
+  function fmtMaxMin(m) {
+    if (m < 60) return m + ' min';
+    const h = Math.floor(m / 60), r = m % 60;
+    return h + ' h' + (r ? ' ' + String(r).padStart(2, '0') : '');
+  }
+  function fmtDur(sec) {
+    const m = Math.max(1, Math.round(sec / 60));
+    if (m < 60) return { n: String(m), u: 'min' };
+    const h = Math.floor(m / 60), r = m % 60;
+    return { n: h + ' h' + (r ? ' ' + String(r).padStart(2, '0') : ''), u: '' };
+  }
+  function haversineKm(a, b) {
+    const R = 6371, rad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  }
+  function depFromCitycode(c) {
+    if (!c) return null;
+    return String(c).startsWith('97') ? String(c).slice(0, 3) : String(c).slice(0, 2);
+  }
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888'; }
+
+  // Lecture d'un CSV (gère les guillemets, détecte , ou ;)
+  function parseCSV(text) {
+    text = String(text).replace(/^﻿/, '');
+    const firstLine = text.split('\n', 1)[0] || '';
+    const delim = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
+    const rows = []; let row = []; let field = ''; let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQ) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+        else field += c;
+      } else if (c === '"') inQ = true;
+      else if (c === delim) { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c !== '\r') field += c;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+  const csvCell = (v) => { const s = String(v == null ? '' : v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+
+  // Appel réseau JSON avec délai max et nouvelles tentatives (erreurs réseau, 429, 5xx)
+  async function getJSON(url, opts) {
+    const timeout = (opts && opts.timeout) || 20000;
+    const retries = opts && opts.retries != null ? opts.retries : 2;
+    let lastErr = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      if (attempt) await sleep(800 * attempt * (lastErr && lastErr.status === 429 ? 3 : 1));
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeout);
+      try {
+        const res = await fetch(url, { signal: ctrl.signal });
+        if (res.ok) { const data = await res.json(); clearTimeout(timer); return data; }
+        clearTimeout(timer);
+        lastErr = Object.assign(new Error('HTTP ' + res.status), { status: res.status });
+        if (res.status !== 429 && res.status < 500) break; // erreur définitive : inutile d'insister
+      } catch (e) {
+        clearTimeout(timer);
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('Erreur réseau');
+  }
+
+  async function pool(items, limit, fn) {
+    const out = new Array(items.length);
+    let next = 0;
+    async function worker() { while (next < items.length) { const i = next++; out[i] = await fn(items[i], i); } }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+    return out;
+  }
+
+  function nextWeekday9() {
+    const now = new Date();
+    const d = new Date(now); d.setHours(9, 0, 0, 0);
+    if (d <= now) d.setDate(d.getDate() + 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return d;
+  }
+  function toLocalInput(d) {
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  /* ===================== État ===================== */
+  const state = {
+    origin: null,
+    prof: 'mg', radius: 3, mode: 'TRANSIT', maxMin: 30, departISO: null,
+    sectors: new Set(SECTOR_ORDER),
+    hideMEP: true, vitaleOnly: false, hideRefused: false,
+    sort: 'time',
+    area: null,
+    times: new Map(),
+    motisDownUntil: 0,
+    runId: 0,
+    searched: false,
+    suivi: store.get(KEYS.suivi, {}),
+    visible: [],
+    extra: {}
+  };
+
+  const ui = {
+    form: $('form'), addr: $('addr'), suggest: $('suggest'), addrMsg: $('addrMsg'), locate: $('locate'),
+    radius: $('radius'), radiusOut: $('radiusOut'), maxMin: $('maxMin'), maxOut: $('maxOut'),
+    depart: $('depart'), departField: $('departField'),
+    hideMEP: $('hideMEP'), vitaleOnly: $('vitaleOnly'), hideRefused: $('hideRefused'), go: $('go'),
+    status: $('status'), steps: $('steps'), bar: $('bar'), notices: $('notices'), topNotice: $('topNotice'),
+    toolbar: $('toolbar'), summary: $('summary'), sort: $('sort'), copyList: $('copyList'),
+    map: $('map'), mapNote: $('mapNote'), intro: $('intro'), list: $('list'), empty: $('empty'), freshness: $('freshness')
+  };
+
+  /* ===================== Étapes de progression ===================== */
+  const STEPS = [['adresse', 'Adresse'], ['communes', 'Communes autour'], ['annuaire', 'Annuaire Assurance Maladie'], ['geo', 'Localisation des cabinets'], ['trajet', 'Temps de trajet']];
+  const steps = {
+    st: {},
+    reset() { this.st = {}; STEPS.forEach(([id]) => { this.st[id] = { s: 'idle', d: '', p: 0 }; }); this.draw(); },
+    set(id, s, d) { const x = this.st[id] || (this.st[id] = { p: 0 }); x.s = s; if (d != null) x.d = d; this.draw(); },
+    progress(id, done, total) { const x = this.st[id]; x.s = 'active'; x.p = total ? done / total : 0; x.d = done + ' / ' + total; this.draw(); },
+    draw() {
+      ui.steps.innerHTML = STEPS.map(([id, label]) => {
+        const x = this.st[id] || { s: 'idle', d: '' };
+        return '<li data-state="' + x.s + '"><span class="ico" aria-hidden="true"></span><span class="t">' + label + '</span><span class="d">' + esc(x.d) + '</span></li>';
+      }).join('');
+      let f = 0;
+      STEPS.forEach(([id]) => { const x = this.st[id]; if (!x) return; if (x.s === 'done' || x.s === 'warn' || x.s === 'skip') f += 1; else if (x.s === 'active') f += Math.max(0.1, x.p || 0); });
+      ui.bar.style.width = Math.round(f / STEPS.length * 100) + '%';
+    }
+  };
+
+  /* ===================== Adresse de départ ===================== */
+  function featureToPlace(f) {
+    const p = f.properties || {};
+    return {
+      lat: round5(f.geometry.coordinates[1]), lon: round5(f.geometry.coordinates[0]),
+      label: p.label || 'Adresse', context: p.context || '', postcode: p.postcode || '', citycode: p.citycode || '',
+      depcode: p.depcode || depFromCitycode(p.citycode)
+    };
+  }
+  function addrMsg(text, kind) { ui.addrMsg.textContent = text; ui.addrMsg.dataset.kind = kind || ''; }
+
+  let acTimer = null, acCtrl = null, acItems = [], acIndex = -1;
+  function closeSuggest() { ui.suggest.hidden = true; ui.addr.setAttribute('aria-expanded', 'false'); acIndex = -1; }
+  function drawSuggest(errorText) {
+    if (errorText) {
+      ui.suggest.innerHTML = '<li class="none" role="option" aria-disabled="true">' + esc(errorText) + '</li>';
+    } else if (!acItems.length) {
+      ui.suggest.innerHTML = '<li class="none" role="option" aria-disabled="true">Aucune adresse trouvée. Vérifie l\'orthographe ou ajoute la ville.</li>';
+    } else {
+      ui.suggest.innerHTML = acItems.map((p, i) =>
+        '<li role="option" id="ac-' + i + '" data-i="' + i + '" aria-selected="' + (i === acIndex) + '">' + esc(p.label) + '<small>' + esc(p.context) + '</small></li>').join('');
+    }
+    ui.suggest.hidden = false;
+    ui.addr.setAttribute('aria-expanded', 'true');
+    if (acIndex >= 0) ui.addr.setAttribute('aria-activedescendant', 'ac-' + acIndex); else ui.addr.removeAttribute('aria-activedescendant');
+  }
+  // Secours si le service d'adresses de l'IGN ne répond pas : géocodeur de Transitous (OpenStreetMap)
+  async function motisGeocode(q, limit) {
+    const data = await getJSON(API.motis + '/v1/geocode?' + qs({ text: q, language: 'fr', type: 'ADDRESS,PLACE' }), { retries: 0, timeout: 10000 });
+    return (Array.isArray(data) ? data : []).filter(m => !m.country || m.country === 'FR').slice(0, limit).map(m => {
+      const areas = m.areas || [];
+      const city = (areas.find(a => a.default) || areas.find(a => a.adminLevel === 8) || {}).name || '';
+      const first = m.street ? ((m.houseNumber ? m.houseNumber + ' ' : '') + m.street) : m.name;
+      return {
+        lat: round5(m.lat), lon: round5(m.lon),
+        label: [first, [m.zip, city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
+        context: areas.filter(a => a.adminLevel <= 6).map(a => a.name).join(', '),
+        postcode: m.zip || '', citycode: '', depcode: m.zip ? (String(m.zip).startsWith('97') ? String(m.zip).slice(0, 3) : String(m.zip).slice(0, 2)) : null
+      };
+    });
+  }
+  async function suggest(q) {
+    if (acCtrl) acCtrl.abort();
+    const ctrl = acCtrl = new AbortController();
+    try {
+      const res = await fetch(API.geocode + '?' + qs({ q, limit: 6, index: 'address' }), { signal: ctrl.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      acItems = (data.features || []).map(featureToPlace);
+      acIndex = -1;
+      drawSuggest();
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      try {
+        const items = await motisGeocode(q, 6);
+        if (ctrl !== acCtrl) return; // une frappe plus récente a pris le relais
+        acItems = items; acIndex = -1; drawSuggest();
+      } catch (e2) {
+        if (ctrl !== acCtrl) return;
+        acItems = [];
+        drawSuggest('Le service d\'adresses ne répond pas. Réessaie dans un instant.');
+        networkHint(e2);
+      }
+    }
+  }
+  function setOrigin(place, silent) {
+    state.origin = place;
+    ui.addr.value = place.label;
+    closeSuggest();
+    addrMsg('Départ : ' + place.label + (place.context ? ' (' + place.context.split(',').slice(-1)[0].trim() + ')' : ''), 'ok');
+    savePrefs();
+    if (!silent) refresh(true); // on lance la recherche dès que l'adresse est choisie
+  }
+  async function resolveTypedAddress() {
+    const q = ui.addr.value.trim();
+    if (q.length < 3) return null;
+    if (acItems.length) return acItems[Math.max(0, acIndex)];
+    try {
+      const data = await getJSON(API.geocode + '?' + qs({ q, limit: 1, index: 'address' }), { retries: 1 });
+      const f = data.features && data.features[0];
+      return f ? featureToPlace(f) : null;
+    } catch (e) {
+      return (await motisGeocode(q, 1))[0] || null;
+    }
+  }
+
+  /* ===================== Zone de recherche : communes et codes postaux ===================== */
+  function departmentsFor(lat, lon, rKm) {
+    const dLat = rKm / 111.32, dLon = rKm / (111.32 * Math.cos(lat * Math.PI / 180));
+    const bb = [lon - dLon, lat - dLat, lon + dLon, lat + dLat];
+    return Object.keys(DEP_BBOX).filter(code => {
+      const b = DEP_BBOX[code];
+      return b[0] <= bb[2] && b[2] >= bb[0] && b[1] <= bb[3] && b[3] >= bb[1];
+    });
+  }
+  const memCommunes = {};
+  async function communesOf(dep) {
+    if (memCommunes[dep]) return memCommunes[dep];
+    const cached = store.get(KEYS.communes + dep, null);
+    if (cached && Date.now() - cached.t < 30 * 864e5) return (memCommunes[dep] = cached.list);
+    const fields = 'nom,code,codesPostaux,centre,surface';
+    const base = await getJSON(API.communes + '?' + qs({ codeDepartement: dep, fields, format: 'json' }));
+    let list = Array.isArray(base) ? base : [];
+    const parent = ARRONDISSEMENTS[dep];
+    if (parent) {
+      try {
+        const arr = await getJSON(API.communes + '?' + qs({ codeDepartement: dep, type: 'arrondissement-municipal', fields, format: 'json' }));
+        if (Array.isArray(arr) && arr.length) list = list.filter(c => c.code !== parent).concat(arr);
+      } catch (e) { /* on garde la commune entière */ }
+    }
+    const compact = list
+      .filter(c => c.centre && c.centre.coordinates && c.codesPostaux && c.codesPostaux.length)
+      .map(c => [c.nom, c.codesPostaux, round5(c.centre.coordinates[1]), round5(c.centre.coordinates[0]), Math.round(c.surface || 0)]);
+    memCommunes[dep] = compact;
+    store.set(KEYS.communes + dep, { t: Date.now(), list: compact });
+    return compact;
+  }
+  // Codes postaux des communes qui touchent le cercle (triés du plus proche au plus loin)
+  function nearbyPostcodes(origin, rKm, communes) {
+    const best = new Map(), centers = new Map();
+    for (const [nom, cps, lat, lon, surf] of communes) {
+      for (const cp of cps) { if (!centers.has(cp)) centers.set(cp, []); centers.get(cp).push({ nom: norm(nom), lat, lon }); }
+      const d = haversineKm(origin, { lat, lon });
+      const rc = Math.sqrt((surf || 0) / 100 / Math.PI); // rayon équivalent de la commune, en km
+      if (d <= rKm + 1.6 * rc + 0.6) for (const cp of cps) if (!best.has(cp) || d < best.get(cp)) best.set(cp, d);
+    }
+    const postcodes = [...best.entries()].sort((a, b) => a[1] - b[1]).map(e => e[0]);
+    return { postcodes, centers };
+  }
+
+  /* ===================== Annuaire santé (Assurance Maladie) ===================== */
+  async function fetchDoctors(postcodes, token, onProgress) {
+    const rows = [];
+    const groups = chunk(postcodes, LIMITS.pcChunk);
+    let truncated = false;
+    for (let gi = 0; gi < groups.length; gi++) {
+      const base = API.annuaire + '?' + qs({ coordonnees_code_postal__in: groups[gi].join(','), specialite_libelle__exact: prof().label, page_size: 50 });
+      const first = await getJSON(base);
+      cancelIf(token);
+      rows.push(...(first.data || []));
+      const total = (first.meta && first.meta.total) || 0;
+      const pages = Math.ceil(total / 50);
+      if (pages > 1) {
+        const rest = await pool(range(2, pages), 4, p => getJSON(base + '&page=' + p));
+        cancelIf(token);
+        rest.forEach(r => rows.push(...((r && r.data) || [])));
+      }
+      onProgress(rows.length);
+      if (rows.length >= LIMITS.rows && gi < groups.length - 1) { truncated = true; break; }
+    }
+    return { rows, truncated };
+  }
+  function sectorOf(r) {
+    const s = r.secteur_conventionnel_code == null ? null : Number(r.secteur_conventionnel_code);
+    const o = r.option_tarifaire_code == null ? null : Number(r.option_tarifaire_code);
+    if (s === 1) return 'S1';
+    if (s === 2) return 'DP';
+    if (s === 3) return (o === 3 || o === 4) ? 'S2O' : 'S2';
+    if (s === 0) return 'S3';
+    return 'NA';
+  }
+  const clean = (v) => (v == null ? '' : String(v).trim());
+  function toDoctor(r) {
+    const voie = clean(r.coordonnees_voie), lieu = clean(r.coordonnees_lieu_dit), cp = clean(r.coordonnees_code_postal), ville = clean(r.coordonnees_ville);
+    const nom = clean(r.ps_activite_nom), prenom = clean(r.ps_activite_prenom);
+    return {
+      key: norm([nom, prenom, voie || lieu, cp].join(' | ')),
+      nom, prenom,
+      raison: clean(r.ps_activite_raison_sociale),
+      vitale: r.ps_activite_carte_vitale === true || r.ps_activite_carte_vitale === 'true',
+      mep: clean(r.activite_particuliere_libelle),
+      nature: clean(r.nature_exercice_libelle),
+      tel: clean(r.coordonnees_num_tel),
+      voie, lieu, compl: clean(r.coordonnees_complement), cp, ville,
+      sector: sectorOf(r),
+      optLabel: clean(r.option_tarifaire_libelle),
+      geoKey: norm((voie || lieu) + ' | ' + cp + ' | ' + ville),
+      lat: null, lon: null, precision: null, dist: null
+    };
+  }
+  function dedupe(docs) {
+    const map = new Map();
+    for (const d of docs) {
+      const prev = map.get(d.key);
+      if (!prev || (!prev.tel && d.tel)) map.set(d.key, d);
+    }
+    return [...map.values()];
+  }
+
+  /* ===================== Localisation des cabinets (géocodage) ===================== */
+  function precisionOf(type) { return type === 'housenumber' ? 1 : type === 'street' ? 2 : 3; }
+  async function geocodeBatch(entries) {
+    const lines = ['id,adresse,cp,ville'];
+    entries.forEach(([, a], i) => lines.push([i, a.voie, a.cp, a.ville].map(csvCell).join(',')));
+    const fd = new FormData();
+    fd.append('data', new Blob([lines.join('\n')], { type: 'text/csv' }), 'adresses.csv');
+    fd.append('columns', 'adresse');
+    fd.append('columns', 'ville');
+    fd.append('postcode', 'cp');
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 90000);
+    try {
+      const res = await fetch(API.geocodeCsv, { method: 'POST', body: fd, signal: ctrl.signal });
+      if (!res.ok) throw new Error('CSV HTTP ' + res.status);
+      const table = parseCSV(await res.text());
+      const head = table[0] || [];
+      const col = (n) => head.indexOf(n);
+      const iId = col('id'), iLat = col('latitude'), iLon = col('longitude'), iScore = col('result_score'), iType = col('result_type');
+      if (iId < 0 || iLat < 0 || iLon < 0) throw new Error('Format CSV inattendu');
+      const out = new Map();
+      for (const row of table.slice(1)) {
+        const e = entries[Number(row[iId])];
+        if (!e) continue;
+        const lat = parseFloat(row[iLat]), lon = parseFloat(row[iLon]);
+        const score = iScore >= 0 ? parseFloat(row[iScore]) : 1;
+        if (isFinite(lat) && isFinite(lon) && score >= 0.35) out.set(e[0], [round5(lat), round5(lon), precisionOf(iType >= 0 ? row[iType] : '')]);
+      }
+      return out;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  async function geocodeOne(a) {
+    const data = await getJSON(API.geocode + '?' + qs({ q: (a.voie + ' ' + a.cp + ' ' + a.ville).trim(), limit: 1, index: 'address' }), { timeout: 12000, retries: 1 });
+    const f = data.features && data.features[0];
+    if (!f) return null;
+    const p = f.properties || {};
+    if ((p.score || 0) < 0.35) return null;
+    if (p.postcode && a.cp && p.postcode.slice(0, 2) !== a.cp.slice(0, 2)) return null;
+    return [round5(f.geometry.coordinates[1]), round5(f.geometry.coordinates[0]), precisionOf(p.type)];
+  }
+  function saveGeoCache(cache) {
+    if (store.set(KEYS.geo, cache)) return;
+    // Mémoire du navigateur pleine : on ne garde que les adresses de cette recherche.
+    store.set(KEYS.geo, {});
+  }
+  async function locateDoctors(docs, centers, token, onProgress) {
+    const cache = store.get(KEYS.geo, {});
+    const todo = new Map();
+    for (const d of docs) {
+      if (!cache[d.geoKey] && (d.voie || d.lieu) && !todo.has(d.geoKey)) todo.set(d.geoKey, { voie: d.voie || d.lieu, cp: d.cp, ville: d.ville });
+    }
+    const entries = [...todo.entries()];
+    let batchOK = false, done = 0;
+    if (entries.length) onProgress(0, entries.length);
+    if (entries.length > 20) {
+      try {
+        for (const part of chunk(entries, 1000)) {
+          const found = await geocodeBatch(part);
+          cancelIf(token);
+          found.forEach((v, k) => { cache[k] = v; });
+          done += part.length;
+          onProgress(done, entries.length);
+        }
+        batchOK = true;
+      } catch (e) {
+        if (e === CANCELLED) throw e;
+        batchOK = false; // on passe à la méthode adresse par adresse
+      }
+    }
+    if (!batchOK && entries.length) {
+      done = 0;
+      const missing = entries.filter(([k]) => !cache[k]);
+      let fails = 0, broken = false; // coupe-circuit : service en panne → on arrête d'insister
+      await pool(missing, 5, async ([k, a]) => {
+        cancelIf(token);
+        if (!broken) {
+          try { const r = await geocodeOne(a); fails = 0; if (r) cache[k] = r; }
+          catch (e) { if (++fails >= 6) broken = true; }
+        }
+        done++;
+        if (done % 5 === 0 || done === missing.length) onProgress(done, missing.length);
+      });
+    }
+    saveGeoCache(cache);
+    // Adresse introuvable : on place le cabinet au centre de sa commune.
+    let approx = 0;
+    for (const d of docs) {
+      const c = cache[d.geoKey];
+      if (c) { d.lat = c[0]; d.lon = c[1]; d.precision = c[2]; }
+      else {
+        const list = centers.get(d.cp) || [];
+        const v = norm(d.ville);
+        const hit = list.find(x => x.nom === v) || list[0];
+        if (hit) { d.lat = hit.lat; d.lon = hit.lon; d.precision = 4; }
+      }
+      if (d.precision >= 3) approx++;
+    }
+    return approx;
+  }
+
+  /* ===================== Temps de trajet (Transitous / MOTIS) ===================== */
+  function originKey() { return state.origin ? state.origin.lat.toFixed(5) + ',' + state.origin.lon.toFixed(5) : ''; }
+  function timesKey(mode) { return (mode || state.mode) + '|' + originKey() + ((mode || state.mode) === 'TRANSIT' ? '|' + state.departISO : ''); }
+
+  async function motis(mode, part, reqSec) {
+    const one = state.origin.lat.toFixed(5) + ';' + state.origin.lon.toFixed(5);
+    const many = part.map(d => d.lat.toFixed(5) + ';' + d.lon.toFixed(5)).join(',');
+    if (mode === 'TRANSIT') {
+      const url = API.motis + '/experimental/one-to-many-intermodal?' + qs({ one, many, time: state.departISO, maxTravelTime: Math.round(reqSec / 60), maxMatchingDistance: 250, arriveBy: 'false' });
+      const r = await getJSON(url, { timeout: 90000, retries: 1 });
+      if (!r || (!Array.isArray(r.transit_durations) && !Array.isArray(r.street_durations))) throw new Error('Réponse inattendue');
+      return part.map((d, j) => {
+        const walk = r.street_durations && r.street_durations[j] && r.street_durations[j].duration;
+        let best = Number.isFinite(walk) ? { sec: walk, transfers: null, walkOnly: true } : null;
+        for (const e of (r.transit_durations && r.transit_durations[j]) || []) {
+          if (Number.isFinite(e.duration) && (!best || e.duration < best.sec)) best = { sec: e.duration, transfers: e.transfers, walkOnly: false };
+        }
+        return best ? Object.assign(best, { bound: reqSec }) : { sec: null, bound: reqSec };
+      });
+    }
+    const url = API.motis + '/v1/one-to-many?' + qs({ one, many, mode, max: reqSec, maxMatchingDistance: 250, arriveBy: 'false' });
+    const r = await getJSON(url, { timeout: 60000, retries: 1 });
+    if (!Array.isArray(r)) throw new Error('Réponse inattendue');
+    return part.map((d, j) => {
+      const s = r[j] && r[j].duration;
+      return Number.isFinite(s) ? { sec: s, bound: reqSec } : { sec: null, bound: reqSec };
+    });
+  }
+  function estimate(d, mode) { return { sec: Math.round(MODES[mode].estMin(d.dist) * 60), bound: Infinity, est: true }; }
+
+  async function computeTimes(scope, token) {
+    const mode = state.mode, key = timesKey(mode);
+    let cache = state.times.get(key);
+    if (!cache) state.times.set(key, cache = new Map());
+    const maxSec = state.maxMin * 60;
+    const serviceUp = Date.now() > state.motisDownUntil;
+    const need = scope.filter(d => {
+      const t = cache.get(d.key);
+      if (!t) return true;
+      if (t.est) return serviceUp;
+      return t.sec == null && t.bound < maxSec;
+    });
+    if (!need.length) { steps.set('trajet', 'done', scope.length ? 'déjà calculés' : 'rien à calculer'); return; }
+    const reqSec = mode === 'TRANSIT' ? Math.min(maxSec + 600, 7200) : Math.min(Math.max(maxSec, 3600), 21600);
+    const parts = chunk(need, LIMITS.chunk);
+    let failed = !serviceUp, done = 0;
+    steps.progress('trajet', 0, need.length);
+    for (const part of parts) {
+      cancelIf(token);
+      if (!failed) {
+        try {
+          const res = await motis(mode, part, reqSec);
+          cancelIf(token);
+          part.forEach((d, j) => cache.set(d.key, res[j]));
+        } catch (e) {
+          if (e === CANCELLED) throw e;
+          failed = true;
+          state.motisDownUntil = Date.now() + 2 * 60 * 1000;
+        }
+      }
+      if (failed) part.forEach(d => cache.set(d.key, estimate(d, mode)));
+      done += part.length;
+      steps.progress('trajet', done, need.length);
+    }
+    steps.set('trajet', failed ? 'warn' : 'done', failed ? 'estimés' : need.length + ' calculés');
+  }
+
+  /* ===================== Recherche complète ===================== */
+  function cancelIf(token) { if (token !== state.runId) throw CANCELLED; }
+  function reachKm() { return MODES[state.mode].vmax * state.maxMin / 60; }
+  function passesStatic(d) {
+    if (!state.sectors.has(d.sector)) return false;
+    if (state.hideMEP && d.mep) return false;
+    if (state.vitaleOnly && !d.vitale) return false;
+    if (state.hideRefused && state.suivi[d.key] && state.suivi[d.key].s === 'non') return false;
+    return true;
+  }
+
+  async function loadArea(r, token) {
+    const o = state.origin;
+    steps.set('communes', 'active', '');
+    const deps = departmentsFor(o.lat, o.lon, r);
+    if (o.depcode && DEP_BBOX[o.depcode] && !deps.includes(o.depcode)) deps.push(o.depcode);
+    if (!deps.length) throw new UserError('Cette adresse semble hors de France. Choisis une adresse en France.');
+    let lists;
+    try { lists = await pool(deps, 3, communesOf); }
+    catch (e) { steps.set('communes', 'fail', 'service indisponible'); throw new UserError('Le service des communes (geo.api.gouv.fr) ne répond pas. Réessaie dans une minute.', e); }
+    cancelIf(token);
+    const { postcodes, centers } = nearbyPostcodes(o, r, lists.flat());
+    if (!postcodes.length) { steps.set('communes', 'fail', 'aucune'); throw new UserError('Aucune commune trouvée autour de cette adresse. Augmente le rayon.'); }
+    steps.set('communes', 'done', postcodes.length + (postcodes.length > 1 ? ' codes postaux' : ' code postal'));
+
+    steps.set('annuaire', 'active', '');
+    let res;
+    try { res = await fetchDoctors(postcodes, token, n => steps.set('annuaire', 'active', n + ' fiches')); }
+    catch (e) { if (e === CANCELLED) throw e; steps.set('annuaire', 'fail', 'service indisponible'); throw new UserError('L\'annuaire de l\'Assurance Maladie (data.gouv.fr) ne répond pas. Réessaie dans une minute.'); }
+    const docs = dedupe(res.rows.map(toDoctor));
+    steps.set('annuaire', res.truncated ? 'warn' : 'done', docs.length + ' ' + (docs.length > 1 ? prof().plural : prof().one));
+
+    steps.set('geo', 'active', '');
+    const approx = await locateDoctors(docs, centers, token, (d, t) => steps.progress('geo', d, t));
+    cancelIf(token);
+    const placed = docs.filter(d => d.lat != null);
+    placed.forEach(d => { d.dist = haversineKm(o, d); });
+    steps.set('geo', approx > placed.length * 0.3 ? 'warn' : 'done', placed.length + ' placés');
+    state.area = { originKey: originKey(), prof: state.prof, r, doctors: placed, truncated: res.truncated, approx };
+  }
+
+  function readForm() {
+    state.prof = (ui.form.querySelector('input[name="prof"]:checked') || {}).value || 'mg';
+    state.radius = parseFloat(ui.radius.value);
+    state.maxMin = parseInt(ui.maxMin.value, 10);
+    const m = ui.form.querySelector('input[name="mode"]:checked');
+    state.mode = m ? m.value : 'TRANSIT';
+    const dep = ui.depart.value ? new Date(ui.depart.value) : nextWeekday9();
+    state.departISO = isNaN(dep.getTime()) ? nextWeekday9().toISOString() : dep.toISOString();
+    state.sectors = new Set([...ui.form.querySelectorAll('input[name="sector"]:checked')].map(i => i.value));
+    if (state.sectors.size) state.sectors.add('NA');
+    state.hideMEP = ui.hideMEP.checked;
+    state.vitaleOnly = ui.vitaleOnly.checked;
+    state.hideRefused = ui.hideRefused.checked;
+    state.sort = ui.sort.value;
+  }
+
+  async function refresh(reveal) {
+    if (!state.origin) return;
+    const token = ++state.runId;
+    readForm();
+    savePrefs();
+    ui.go.disabled = true;
+    ui.status.hidden = false;
+    clearNotices();
+    // Sur mobile, le formulaire est au-dessus des résultats : on descend pour suivre la recherche.
+    if (reveal && window.innerWidth < 1000) ui.status.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    try {
+      const need = Math.min(state.radius, reachKm());
+      const sameArea = state.area && state.area.originKey === originKey() && state.area.prof === state.prof && state.area.r + 1e-9 >= need;
+      if (!sameArea) {
+        if (state.area && state.area.prof !== state.prof) { ui.list.innerHTML = ''; ui.toolbar.hidden = true; ui.empty.hidden = true; }
+        steps.reset();
+        steps.set('adresse', 'done', state.origin.postcode ? state.origin.postcode : 'ok');
+        await loadArea(need, token);
+      } else {
+        steps.set('trajet', 'active', '');
+      }
+      const scope = state.area.doctors
+        .filter(d => d.dist <= need && passesStatic(d))
+        .sort((a, b) => a.dist - b.dist);
+      state.extra = { beyondCap: Math.max(0, scope.length - LIMITS.routed) };
+      await computeTimes(scope.slice(0, LIMITS.routed), token);
+      cancelIf(token);
+      state.searched = true;
+      render();
+    } catch (e) {
+      if (e === CANCELLED) return;
+      console.error(e);
+      if (!state.area) { ui.toolbar.hidden = true; ui.list.innerHTML = ''; }
+      notice('bad', e && e.user ? e.message : 'La recherche a échoué. Vérifie ta connexion puis relance.', e && e.user ? '' : String(e && e.message || e));
+      networkHint(e);
+    } finally {
+      if (token === state.runId) ui.go.disabled = false;
+    }
+  }
+
+  /* ===================== Affichage ===================== */
+  function visibleRows() {
+    const maxSec = state.maxMin * 60;
+    const times = state.times.get(timesKey()) || new Map();
+    const rows = [];
+    let tooSlow = 0;
+    if (!state.area) return { rows, tooSlow };
+    for (const d of state.area.doctors) {
+      if (d.dist > state.radius || !passesStatic(d)) continue;
+      const t = times.get(d.key);
+      if (!t) continue;
+      if (t.sec == null || t.sec > maxSec) { tooSlow++; continue; }
+      rows.push({ d, t });
+    }
+    const bySuivi = (r) => SUIVI_ORDER[(state.suivi[r.d.key] && state.suivi[r.d.key].s) || ''];
+    const cmp = {
+      time: (a, b) => a.t.sec - b.t.sec || a.d.dist - b.d.dist,
+      dist: (a, b) => a.d.dist - b.d.dist,
+      name: (a, b) => a.d.nom.localeCompare(b.d.nom, 'fr') || a.d.prenom.localeCompare(b.d.prenom, 'fr'),
+      suivi: (a, b) => bySuivi(a) - bySuivi(b) || a.t.sec - b.t.sec
+    }[state.sort] || ((a, b) => a.t.sec - b.t.sec);
+    rows.sort(cmp);
+    return { rows, tooSlow };
+  }
+
+  // Recherche Google limitée à Doctolib : le 1er résultat ouvre la fiche du praticien (horaires, tarifs, secteur, créneaux).
+  // Un lien direct vers Doctolib renvoie souvent vers la prise de rendez-vous au lieu de la fiche.
+  function doctolibSearchURL(d) {
+    return 'https://www.google.com/search?q=' + encodeURIComponent('site:doctolib.fr ' + (d.prenom ? titleFr(d.prenom) + ' ' : '') + d.nom + ' ' + titleFr(d.ville));
+  }
+  function setSuivi(key, patch) {
+    const cur = Object.assign({}, state.suivi[key] || {}, patch, { t: Date.now() });
+    if (!cur.s) delete cur.s;
+    if (!cur.rdv) delete cur.rdv;
+    if (cur.s || cur.rdv) state.suivi[key] = cur; else delete state.suivi[key];
+    store.set(KEYS.suivi, state.suivi);
+  }
+
+  function displayName(d) { return 'Dr ' + (d.prenom ? titleFr(d.prenom) + ' ' : '') + d.nom; }
+  function addressText(d) { return titleFr(d.voie || d.lieu) + ', ' + d.cp + ' ' + titleFr(d.ville); }
+
+  function cardHTML(row) {
+    const d = row.d, t = row.t;
+    const s = secInfo(d.sector);
+    const id = 'doc-' + hash(d.key);
+    const dur = fmtDur(t.sec);
+    let how = MODES[state.mode].word;
+    if (state.mode === 'TRANSIT' && !t.est) {
+      if (t.walkOnly) how = 'à pied, plus rapide';
+      else if (t.transfers === 0) how += ' · direct';
+      else if (t.transfers > 0) how += ' · ' + t.transfers + ' corresp.';
+    }
+    if (t.est) how += ' · estimé';
+    const suivi = (state.suivi[d.key] && state.suivi[d.key].s) || '';
+    const tags = [];
+    if (d.optLabel && d.sector !== 'S2O') tags.push('<span class="tag">' + esc(d.optLabel) + '</span>');
+    if (d.mep) tags.push('<span class="tag">' + esc(d.mep) + '</span>');
+    const meta = [];
+    if (d.vitale) meta.push('Carte Vitale acceptée');
+    if (d.nature) meta.push(esc(d.nature));
+    if (d.precision >= 3) meta.push('position approximative');
+    const telDigits = String(d.tel).replace(/\D/g, '');
+    const dest = encodeURIComponent(addressText(d));
+    const gmaps = 'https://www.google.com/maps/dir/?api=1&origin=' + state.origin.lat + ',' + state.origin.lon + '&destination=' + dest + '&travelmode=' + MODES[state.mode].gmaps;
+    const doctolib = doctolibSearchURL(d);
+    const rdv = !!(state.suivi[d.key] && state.suivi[d.key].rdv);
+    const seg = ['', 'oui', 'non', 'rappel'].map(v => {
+      const rid = 's-' + id + '-' + (v || 'na');
+      return '<input type="radio" name="s-' + id + '" id="' + rid + '" value="' + v + '"' + (suivi === v ? ' checked' : '') + '><label for="' + rid + '" data-v="' + (v || 'na') + '">' + SUIVI[v].label + '</label>';
+    }).join('');
+    return '<li class="doc" id="' + id + '" data-key="' + esc(d.key) + '">' +
+      '<div class="plaque"><p class="eyebrow">' + esc(prof().eyebrow) + '</p>' +
+        '<h3 class="name">' + esc(displayName(d)) + '</h3>' +
+        '<p class="convention"><span class="pill" style="--c: var(' + s.token + ')">' + esc(s.plate) + '</span>' + tags.join('') + '</p></div>' +
+      '<div class="trip"><span class="mins">' + (t.est ? '<span class="approx">≈</span>' : '') + esc(dur.n) + (dur.u ? '<small> ' + dur.u + '</small>' : '') + '</span>' +
+        '<span class="how">' + esc(how) + '</span><span class="km">' + fmtKm(d.dist) + '</span></div>' +
+      '<div class="details">' +
+        '<p class="addr">' + esc(addressText(d)) + (d.compl || d.raison ? '<small>' + esc(titleFr([d.compl, d.raison].filter(Boolean).join(' · '))) + '</small>' : '') + '</p>' +
+        (meta.length ? '<p class="meta">' + meta.join(' · ') + '</p>' : '') +
+        '<div class="actions">' +
+          (d.tel ? '<span class="tel">' + esc(fmtTel(d.tel)) + '</span><button type="button" class="act" data-copy="' + esc(fmtTel(d.tel)) + '">Copier le n°</button><a class="act" href="tel:' + esc(telDigits) + '">Appeler</a>' : '<span class="meta">Pas de téléphone indiqué</span>') +
+          '<a class="act" href="' + esc(gmaps) + '" target="_blank" rel="noopener">Itinéraire</a>' +
+          '<a class="act act-rdv" href="' + esc(doctolib) + '" target="_blank" rel="noopener">RDV Doctolib</a>' +
+          '<button type="button" class="act" data-show="' + esc(d.key) + '">Voir sur la carte</button>' +
+        '</div>' +
+        '<fieldset class="suivi" data-key="' + esc(d.key) + '"><legend>Nouveaux patients ?</legend><div class="seg">' + seg + '</div>' +
+          '<label class="check rdv-check"><input type="checkbox" class="rdv-box"' + (rdv ? ' checked' : '') + '><span>RDV en ligne dispo</span></label></fieldset>' +
+      '</div></li>';
+  }
+
+  function render() {
+    const { rows, tooSlow } = visibleRows();
+    state.visible = rows;
+    ui.intro.hidden = true;
+    ui.toolbar.hidden = false;
+    document.getElementById('tapHint').hidden = !rows.length;
+
+    const counts = {};
+    rows.forEach(r => { counts[r.d.sector] = (counts[r.d.sector] || 0) + 1; });
+    const split = SECTOR_ORDER.filter(k => counts[k]).map(k => { const i = secInfo(k); return counts[k] + ' ' + (counts[k] > 1 ? i.count : (i.countOne || i.count)); }).join(' · ');
+    const called = rows.reduce((acc, r) => { const s = state.suivi[r.d.key] && state.suivi[r.d.key].s; if (s) acc[s] = (acc[s] || 0) + 1; return acc; }, {});
+    const suiviTxt = [called.oui ? called.oui + ' accepte' + (called.oui > 1 ? 'nt' : '') : '', called.rappel ? called.rappel + ' à rappeler' : '', called.non ? called.non + ' refus' : ''].filter(Boolean).join(' · ');
+    ui.summary.innerHTML = '<strong>' + rows.length + '</strong> ' + esc(rows.length > 1 ? prof().plural : prof().one) + ' à moins de ' + esc(fmtMaxMin(state.maxMin)) + ' ' + esc(MODES[state.mode].word) + ', dans un rayon de ' + esc(fmtRadius(state.radius)) +
+      (split || suiviTxt ? '<span class="split">' + esc([split, suiviTxt].filter(Boolean).join(' — ')) + '</span>' : '');
+
+    ui.list.innerHTML = rows.map(cardHTML).join('');
+    if (!rows.length) {
+      ui.empty.hidden = false;
+      ui.empty.innerHTML = '<strong>Aucun ' + esc(prof().one) + ' ne correspond.</strong>' +
+        (tooSlow ? tooSlow + ' ' + (tooSlow > 1 ? prof().plural + ' sont' : prof().one + ' est') + ' dans le rayon mais au-delà de ' + esc(fmtMaxMin(state.maxMin)) + ' ' + esc(MODES[state.mode].word) + '. ' : '') +
+        'Augmente le temps max ou le rayon, ou coche d\'autres secteurs.';
+    } else ui.empty.hidden = true;
+
+    // Avertissements utiles
+    if (state.area && state.area.truncated) notice('warn', 'Zone très dense', 'Seules les ' + LIMITS.rows.toLocaleString('fr-FR') + ' fiches les plus proches ont été lues. Réduis le rayon pour une recherche complète.');
+    if (rows.some(r => r.t.est)) notice('warn', 'Temps estimés (≈)', 'Le calcul d\'itinéraires n\'a pas répondu : les temps marqués ≈ sont estimés d\'après la distance. Relance dans quelques minutes pour les vrais temps.');
+    if (state.extra.beyondCap) notice('warn', 'Liste limitée', state.extra.beyondCap + ' ' + prof().plural + ' plus éloignés n\'ont pas été calculés. Réduis le rayon ou le temps max pour les voir.');
+    const approxShown = rows.filter(r => r.d.precision >= 3).length;
+    if (approxShown) notice('', 'Positions approximatives', approxShown + ' cabinet' + (approxShown > 1 ? 's sont placés' : ' est placé') + ' au centre de la rue ou de la commune (adresse incomplète dans l\'annuaire).');
+
+    try { updateMap(rows); } catch (e) { console.warn('Carte non mise à jour', e); }
+  }
+
+  function clearNotices() { ui.notices.innerHTML = ''; }
+  function notice(kind, title, text) {
+    const div = document.createElement('div');
+    div.className = 'notice' + (kind ? ' notice-' + kind : '');
+    div.innerHTML = '<strong>' + esc(title) + '</strong>' + (text ? esc(text) : '');
+    ui.notices.appendChild(div);
+  }
+  let hinted = false;
+  function showBlocked() {
+    if (hinted) return;
+    hinted = true;
+    const div = document.createElement('div');
+    div.className = 'notice notice-bad';
+    div.innerHTML = '<strong>Cette page n\'arrive pas à joindre internet</strong>' +
+      'Si tu l\'as ouverte dans l\'appli Claude ou dans l\'aperçu de fichiers du téléphone, c\'est normal : ces aperçus bloquent internet et la localisation. ' +
+      'Ouvre le fichier dans Chrome, Edge ou Firefox sur un ordinateur (double-clic), ou mets la page en ligne pour l\'utiliser sur ton téléphone. Sinon, vérifie ta connexion.';
+    ui.topNotice.appendChild(div);
+  }
+  function networkHint(e) { if (e instanceof TypeError) showBlocked(); }
+  // Au chargement : on vérifie tout de suite que les services sont joignables.
+  async function checkServices() {
+    try { await getJSON(API.geocode + '?' + qs({ q: 'Paris', limit: 1 }), { retries: 0, timeout: 8000 }); return; } catch (e) { /* on essaie le second service */ }
+    try { await getJSON(API.motis + '/v1/geocode?' + qs({ text: 'Paris', language: 'fr' }), { retries: 0, timeout: 8000 }); return; } catch (e) { /* les deux échouent */ }
+    showBlocked();
+  }
+
+  /* ===================== Carte ===================== */
+  let map = null, docLayer = null, originLayer = null, markers = new Map();
+  function initMap() {
+    if (typeof window.L === 'undefined') { ui.map.hidden = true; ui.mapNote.hidden = false; return; }
+    map = L.map(ui.map, { scrollWheelZoom: false }).setView([46.7, 2.5], 5);
+    L.tileLayer(TILES, { maxZoom: 19, attribution: '<a href="https://www.ign.fr" target="_blank" rel="noopener">IGN</a> – Géoplateforme' }).addTo(map);
+    docLayer = L.layerGroup().addTo(map);
+    originLayer = L.layerGroup().addTo(map);
+    map.on('click', () => map.scrollWheelZoom.enable());
+    ui.map.addEventListener('mouseleave', () => map.scrollWheelZoom.disable());
+  }
+  function popupHTML(row) {
+    const d = row.d, t = row.t, dur = fmtDur(t.sec);
+    return '<b>' + esc(displayName(d)) + '</b><br>' + esc(secInfo(d.sector).plate) + '<br>' + (t.est ? '≈ ' : '') + esc(dur.n + (dur.u ? ' ' + dur.u : '')) + ' ' + esc(MODES[state.mode].word) + ' · ' + fmtKm(d.dist) +
+      '<br>' + esc(addressText(d)) + '<br><button type="button" class="linkish" data-focus="' + esc(d.key) + '">Voir la fiche</button>';
+  }
+  function updateMap(rows) {
+    if (!map) return;
+    docLayer.clearLayers(); originLayer.clearLayers(); markers = new Map();
+    const o = state.origin;
+    const accent = cssVar('--accent');
+    const circle = L.circle([o.lat, o.lon], { radius: state.radius * 1000, color: accent, weight: 1.5, opacity: .9, fillColor: accent, fillOpacity: .05, dashArray: '4 6', interactive: false }).addTo(originLayer);
+    L.circleMarker([o.lat, o.lon], { radius: 8, color: cssVar('--surface'), weight: 3, fillColor: cssVar('--ink'), fillOpacity: 1 }).bindTooltip('Départ : ' + esc(o.label)).addTo(originLayer);
+    const surface = cssVar('--surface');
+    rows.forEach(row => {
+      const m = L.circleMarker([row.d.lat, row.d.lon], { radius: 7, color: surface, weight: 1.5, fillColor: cssVar(SECTORS[row.d.sector].token), fillOpacity: .95 });
+      m.bindPopup(popupHTML(row));
+      m.addTo(docLayer);
+      markers.set(row.d.key, m);
+    });
+    map.fitBounds(circle.getBounds(), { padding: [12, 12] });
+  }
+  function focusCard(key) {
+    const el = [...ui.list.querySelectorAll('li.doc')].find(li => li.dataset.key === key);
+    if (!el) return;
+    ui.list.querySelectorAll('.doc.is-focus').forEach(x => x.classList.remove('is-focus'));
+    el.classList.add('is-focus');
+    el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
+  }
+  function showOnMap(key) {
+    const m = markers.get(key);
+    if (!map || !m) return;
+    ui.map.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
+    map.setView(m.getLatLng(), Math.max(map.getZoom(), 16));
+    m.openPopup();
+  }
+
+  /* ===================== Copier la liste ===================== */
+  async function copyText(text, btn, okLabel) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { ok = false; }
+    if (!ok) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+    }
+    if (btn) {
+      const old = btn.textContent;
+      btn.textContent = ok ? (okLabel || 'Copié') : 'Copie impossible';
+      setTimeout(() => { btn.textContent = old; }, 1600);
+    }
+  }
+  function listAsText() {
+    const fmtDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const chosen = prof().sectors.filter(k => state.sectors.has(k));
+    const sectorsTxt = chosen.length === prof().sectors.length ? 'tous secteurs' : chosen.map(k => secInfo(k).short).join(', ');
+    const lines = [
+      prof().copy + ' autour de : ' + state.origin.label,
+      'Critères : ' + fmtMaxMin(state.maxMin) + ' max ' + MODES[state.mode].word + (state.mode === 'TRANSIT' ? ' (départ ' + fmtDate.format(new Date(state.departISO)) + ')' : '') + ' · rayon ' + fmtRadius(state.radius) + ' · ' + sectorsTxt,
+      'Liste du ' + new Date().toLocaleDateString('fr-FR') + ' : ' + state.visible.length + ' résultat' + (state.visible.length > 1 ? 's' : ''),
+      ''
+    ];
+    state.visible.forEach(({ d, t }) => {
+      const s = (state.suivi[d.key] && state.suivi[d.key].s) || '';
+      const dur = fmtDur(t.sec);
+      lines.push(SUIVI[s].mark + ' ' + displayName(d) + ' · ' + secInfo(d.sector).short + ' · ' + (t.est ? '≈' : '') + dur.n + (dur.u ? ' ' + dur.u : '') + ' ' + MODES[state.mode].word + ' · ' + fmtKm(d.dist));
+      const rdvOk = state.suivi[d.key] && state.suivi[d.key].rdv;
+      lines.push('   ' + addressText(d) + (d.tel ? ' · ' + fmtTel(d.tel) : '') + (s ? ' · ' + SUIVI[s].long : '') + (rdvOk ? ' · RDV en ligne dispo' : ''));
+      lines.push('   ' + doctolibSearchURL(d));
+    });
+    return lines.join('\n');
+  }
+
+  /* ===================== Préférences ===================== */
+  function savePrefs() {
+    store.set(KEYS.prefs, {
+      prof: (ui.form.querySelector('input[name="prof"]:checked') || {}).value || 'mg',
+      origin: state.origin, radius: ui.radius.value, maxMin: ui.maxMin.value,
+      mode: (ui.form.querySelector('input[name="mode"]:checked') || {}).value,
+      sectors: [...ui.form.querySelectorAll('input[name="sector"]:checked')].map(i => i.value),
+      hideMEP: ui.hideMEP.checked, vitaleOnly: ui.vitaleOnly.checked, hideRefused: ui.hideRefused.checked, sort: ui.sort.value
+    });
+  }
+  function restorePrefs() {
+    const p = store.get(KEYS.prefs, null);
+    if (!p) return null;
+    if (p.prof && $('p-' + p.prof)) $('p-' + p.prof).checked = true;
+    if (p.radius) ui.radius.value = p.radius;
+    if (p.maxMin) ui.maxMin.value = p.maxMin;
+    if (p.mode && $('m-' + p.mode)) $('m-' + p.mode).checked = true;
+    if (Array.isArray(p.sectors)) ui.form.querySelectorAll('input[name="sector"]').forEach(i => { i.checked = p.sectors.includes(i.value); });
+    if (typeof p.hideMEP === 'boolean') ui.hideMEP.checked = p.hideMEP;
+    if (typeof p.vitaleOnly === 'boolean') ui.vitaleOnly.checked = p.vitaleOnly;
+    if (typeof p.hideRefused === 'boolean') ui.hideRefused.checked = p.hideRefused;
+    if (p.sort) ui.sort.value = p.sort;
+    return p.origin && typeof p.origin.lat === 'number' ? p.origin : null;
+  }
+  function applyProfUI() {
+    state.prof = (ui.form.querySelector('input[name="prof"]:checked') || {}).value || 'mg';
+    const p = prof();
+    const h1 = $('pageTitle');
+    if (h1) h1.textContent = p.title;
+    document.title = p.title;
+    ui.form.querySelectorAll('input[name="sector"]').forEach(input => {
+      const chip = input.closest('.chip');
+      const k = input.value;
+      chip.hidden = !p.sectors.includes(k);
+      const txt = state.prof === 'dent' && SECTORS_DENT[k] ? SECTORS_DENT[k].chip : CHIP_DEFAULT[k];
+      chip.querySelector('strong').textContent = txt[0];
+      chip.querySelector('small').textContent = txt[1];
+    });
+    const mep = $('mepOption');
+    if (mep) mep.hidden = !p.mep;
+    ui.map.setAttribute('aria-label', 'Carte des ' + p.plural);
+  }
+
+  function syncOutputs() {
+    ui.radiusOut.textContent = fmtRadius(parseFloat(ui.radius.value));
+    ui.maxOut.textContent = fmtMaxMin(parseInt(ui.maxMin.value, 10));
+    const m = ui.form.querySelector('input[name="mode"]:checked');
+    ui.departField.hidden = !m || m.value !== 'TRANSIT';
+  }
+
+  /* ===================== Événements ===================== */
+  function bind() {
+    ui.addr.addEventListener('input', () => {
+      state.origin = null;
+      clearTimeout(acTimer);
+      const q = ui.addr.value.trim();
+      if (q.length < 3) { acItems = []; closeSuggest(); addrMsg('Tape au moins 3 caractères puis choisis l\'adresse dans la liste.'); return; }
+      addrMsg('');
+      acTimer = setTimeout(() => suggest(q), 250);
+    });
+    ui.addr.addEventListener('keydown', (e) => {
+      if (ui.suggest.hidden || !acItems.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); acIndex = (acIndex + 1) % acItems.length; drawSuggest(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); acIndex = (acIndex - 1 + acItems.length) % acItems.length; drawSuggest(); }
+      else if (e.key === 'Enter' && acIndex >= 0) { e.preventDefault(); setOrigin(acItems[acIndex]); }
+      else if (e.key === 'Escape') closeSuggest();
+    });
+    ui.suggest.addEventListener('mousedown', (e) => {
+      const li = e.target.closest('li[data-i]');
+      if (!li) return;
+      e.preventDefault();
+      setOrigin(acItems[Number(li.dataset.i)]);
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.addr-wrap')) closeSuggest(); });
+
+    ui.locate.addEventListener('click', () => {
+      if (!navigator.geolocation) { addrMsg('La localisation n\'est pas disponible ici. Tape ton adresse.', 'err'); return; }
+      addrMsg('Recherche de ta position…');
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = round5(pos.coords.latitude), lon = round5(pos.coords.longitude);
+        try {
+          const data = await getJSON(API.reverse + '?' + qs({ lat, lon, limit: 1 }), { retries: 1 });
+          const f = data.features && data.features[0];
+          setOrigin(f ? Object.assign(featureToPlace(f), { lat, lon }) : { lat, lon, label: 'Ma position', context: '', depcode: null });
+        } catch (e) {
+          setOrigin({ lat, lon, label: 'Ma position', context: '', depcode: null });
+        }
+      }, (err) => addrMsg((err && err.code === 1
+        ? 'Ton navigateur bloque la localisation.'
+        : 'Ta position est indisponible pour le moment.') + ' Tape ton adresse puis choisis-la dans la liste qui s\'affiche.', 'err'), { enableHighAccuracy: true, timeout: 12000 });
+    });
+
+    ui.form.querySelectorAll('input[name="prof"]').forEach(i => i.addEventListener('change', () => { applyProfUI(); savePrefs(); if (state.searched) refresh(true); }));
+    ui.radius.addEventListener('input', syncOutputs);
+    ui.maxMin.addEventListener('input', syncOutputs);
+    ui.radius.addEventListener('change', () => { savePrefs(); if (state.searched) refresh(); });
+    ui.maxMin.addEventListener('change', () => { savePrefs(); if (state.searched) refresh(); });
+    ui.form.querySelectorAll('input[name="mode"]').forEach(i => i.addEventListener('change', () => { syncOutputs(); savePrefs(); if (state.searched) refresh(); }));
+    ui.depart.addEventListener('change', () => { if (state.searched && state.mode === 'TRANSIT') refresh(); });
+
+    let filterTimer = null;
+    const onFilter = () => { savePrefs(); if (!state.searched) return; clearTimeout(filterTimer); filterTimer = setTimeout(refresh, 200); };
+    ui.form.querySelectorAll('input[name="sector"]').forEach(i => i.addEventListener('change', onFilter));
+    [ui.hideMEP, ui.vitaleOnly, ui.hideRefused].forEach(i => i.addEventListener('change', onFilter));
+
+    ui.sort.addEventListener('change', () => { state.sort = ui.sort.value; savePrefs(); if (state.searched) render(); });
+    ui.copyList.addEventListener('click', () => { if (state.visible.length) copyText(listAsText(), ui.copyList, 'Liste copiée'); });
+
+    ui.form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!state.origin) {
+        try {
+          const place = await resolveTypedAddress();
+          if (!place) { addrMsg('Adresse introuvable. Choisis-la dans la liste proposée.', 'err'); ui.addr.focus(); return; }
+          setOrigin(place, true);
+        } catch (err) { addrMsg('Le service d\'adresses ne répond pas. Réessaie dans un instant.', 'err'); networkHint(err); return; }
+      }
+      refresh(true);
+    });
+
+    ui.list.addEventListener('click', (e) => {
+      const copyBtn = e.target.closest('[data-copy]');
+      if (copyBtn) { copyText(copyBtn.dataset.copy, copyBtn, 'Copié'); return; }
+      const showBtn = e.target.closest('[data-show]');
+      if (showBtn) { showOnMap(showBtn.dataset.show); return; }
+      // Toucher la fiche (hors boutons, liens et cases) ouvre la page Doctolib du médecin
+      if (e.target.closest('a, button, input, label, fieldset, .tel')) return;
+      if (window.getSelection && String(window.getSelection()).length) return;
+      const li = e.target.closest('li.doc');
+      const link = li && li.querySelector('a.act-rdv');
+      if (link) window.open(link.href, '_blank', 'noopener');
+    });
+    ui.list.addEventListener('change', (e) => {
+      const box = e.target.closest('.suivi input.rdv-box');
+      if (box) { setSuivi(box.closest('.suivi').dataset.key, { rdv: box.checked }); return; }
+      const input = e.target.closest('.suivi input[type="radio"]');
+      if (!input) return;
+      const key = input.closest('.suivi').dataset.key;
+      setSuivi(key, { s: input.value });
+      if ((state.hideRefused && input.value === 'non') || state.sort === 'suivi') { render(); return; }
+      // Mise à jour légère du résumé sans tout redessiner
+      const { rows } = visibleRows(); state.visible = rows;
+    });
+    ui.map.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-focus]');
+      if (b) focusCard(b.dataset.focus);
+    });
+    if (window.matchMedia) {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const onTheme = () => { if (state.searched) updateMap(state.visible); };
+      if (mq.addEventListener) mq.addEventListener('change', onTheme);
+    }
+  }
+
+  async function loadFreshness() {
+    try {
+      const d = await getJSON(API.dataset, { retries: 0, timeout: 10000 });
+      const when = d && (d.last_update || d.last_modified);
+      if (when) ui.freshness.textContent = 'Annuaire mis à jour le ' + new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(when));
+    } catch (e) { /* facultatif */ }
+  }
+
+  const BG_KEY = 'tg.bg.v1';
+  function applyBg(v) {
+    if (!v || v === 'vert') document.documentElement.removeAttribute('data-bg');
+    else document.documentElement.setAttribute('data-bg', v);
+  }
+  function initBg() {
+    const saved = store.get(BG_KEY, 'vert');
+    const radio = $('bg-' + saved);
+    if (radio) radio.checked = true;
+    applyBg(radio ? saved : 'vert');
+    document.querySelectorAll('input[name="bg"]').forEach(i => i.addEventListener('change', () => {
+      applyBg(i.value);
+      store.set(BG_KEY, i.value);
+      if (state.searched) { try { updateMap(state.visible); } catch (e) { /* carte facultative */ } }
+    }));
+  }
+
+  function init() {
+    initBg();
+    ui.depart.value = toLocalInput(nextWeekday9());
+    const savedOrigin = restorePrefs();
+    applyProfUI();
+    syncOutputs();
+    steps.reset();
+    initMap();
+    bind();
+    loadFreshness();
+    checkServices();
+    if (savedOrigin) {
+      setOrigin(savedOrigin, true);
+      refresh();
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
